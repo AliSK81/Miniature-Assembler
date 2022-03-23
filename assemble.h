@@ -3,7 +3,7 @@
 #include<string.h>
 
 #define LINESIZE 255
-#define DELIM "\t, "
+#define DELIM "\t, \n"
 #define NORTYPE 5
 #define NOITYPE 8
 #define NOJTYPE 2
@@ -37,3 +37,7 @@ void formInst(struct instruction, FILE *);
 int hex2int(char *);
 
 void int2hex16(char *, int);
+
+int isWSpace(char);
+
+void as2mc(struct symbolTable *, int, FILE *);
