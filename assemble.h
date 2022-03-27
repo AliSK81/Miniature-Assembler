@@ -41,3 +41,9 @@ void int2hex16(char *, int);
 int isWSpace(char);
 
 void as2mc(struct symbolTable *, int, FILE *);
+
+void getToken(char *, char **, int);
+
+int isLetter(char ch);
+
+int getSymVal(struct symbolTable *symT, int symTabLen, char *sym);
