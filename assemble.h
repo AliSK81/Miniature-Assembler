@@ -25,25 +25,20 @@ struct instruction {
     int rt;
     int rd;
     int imm;
-    int PC;
 };
 
 int findSymTabLen(FILE *);
 
 void fillSymTab(struct symbolTable *, FILE *);
 
-void formInst(struct instruction, FILE *);
+int getOffsetVal(struct symbolTable *symT, int symTabLen, char *sym, int lineNO);
 
 int hex2int(char *);
 
-void int2hex16(char *, int);
+char *int2hex16(int);
 
 int isWSpace(char);
 
-void as2mc(struct symbolTable *, int, FILE *);
+int isLetter(char);
 
-void getToken(char *, char **, int);
-
-int isLetter(char ch);
-
-int getSymVal(struct symbolTable *symT, int symTabLen, char *sym);
+void as2mc(struct symbolTable *, int, FILE *, FILE *);
