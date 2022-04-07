@@ -19,11 +19,11 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-//    if ((assp = fopen("..\\p.as", "r")) == NULL) {
+//    if ((assp = fopen("../test/prog1.as", "r")) == NULL) {
 //        printf("%s cannot be opened\n", argv[1]);
 //        exit(1);
 //    }
-//    if ((machp = fopen("..\\p.mc", "w+")) == NULL) {
+//    if ((machp = fopen("../test/prog1.mc", "w+")) == NULL) {
 //        printf("%s cannot be opened\n", argv[2]);
 //        exit(1);
 //    }
@@ -122,10 +122,14 @@ void fillSymTab(struct symbolTable *symT, FILE *inputFile) {
 }
 
 char *int2hex16(int a) {
-    char *lower = (char *) malloc(5);
+    char *lower = (char *) malloc(9);
     sprintf(lower, "%x", a);
-    lower[4] = '\0';
-    if (a < 0x10) {
+    if (a < 0x0) {
+        lower[3] = lower[7];
+        lower[2] = lower[6];
+        lower[1] = lower[5];
+        lower[0] = lower[4];
+    } else if (a < 0x10) {
         lower[3] = lower[0];
         lower[2] = '0';
         lower[1] = '0';
@@ -141,9 +145,9 @@ char *int2hex16(int a) {
         lower[1] = lower[0];
         lower[0] = '0';
     }
+    lower[4] = '\0';
     return lower;
 }
-
 
 int hex2int(char *hex) {
     return (int) strtol(hex, NULL, 16);
@@ -159,7 +163,7 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
     char hexTable[] = "0123456789abcdef";
 
     int i, instCnt = 0;
-    char *token, *line = (char *) malloc(LINESIZE);
+    char *token, *imm, *line = (char *) malloc(LINESIZE);
     struct instruction *currInst = (struct instruction *) malloc(sizeof(struct instruction));
 
     while (fgets(line, LINESIZE, assp)) {
@@ -169,7 +173,6 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
         if (!isWSpace(line[0]))
             token = strtok(NULL, DELIM);
 
-        // fill mnemonic
         currInst->mnemonic = token;
 
         // case 1 : directive
@@ -183,7 +186,7 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
             int found = 0;
             int instructionsLen = NORTYPE + NOITYPE + NOJTYPE;
 
-            // determine type of instruction (R - I - J)
+            // determine type of instruction
             for (i = 0; i < instructionsLen; ++i) {
                 if (strcmp(currInst->mnemonic, instructions[i]) == 0) {
                     if (i < NORTYPE)
@@ -208,73 +211,73 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
 
             currInst->inst[8] = '\0';
 
-            // case 2-1 : R-Type instruction
-            if (currInst->instType == RTYPE) {
-                token = strtok(NULL, DELIM);
-                currInst->rd = atoi(token);
-                token = strtok(NULL, DELIM);
-                currInst->rs = atoi(token);
-                token = strtok(NULL, DELIM);
-                currInst->rt = atoi(token);
-
-                currInst->inst[0] = '0';
-                currInst->inst[2] = hexTable[currInst->rs];
-                currInst->inst[3] = hexTable[currInst->rt];
-                currInst->inst[4] = hexTable[currInst->rd];
-                currInst->inst[5] = '0';
-                currInst->inst[6] = '0';
-                currInst->inst[7] = '0';
-
-                // case 2-2 : I-Type instruction
-            } else if (currInst->instType == ITYPE) {
-                token = strtok(NULL, DELIM);
-                currInst->rt = atoi(token);
-
-                if (strcmp(currInst->mnemonic, "lui") == 0) {
-                    currInst->rs = 0;
-                } else {
+            switch (currInst->instType) {
+                case RTYPE:
+                    token = strtok(NULL, DELIM);
+                    currInst->rd = atoi(token);
                     token = strtok(NULL, DELIM);
                     currInst->rs = atoi(token);
-                }
-
-                if (strcmp(currInst->mnemonic, "jalr") == 0) {
-                    currInst->imm = 0;
-                } else if (strcmp(currInst->mnemonic, "beq") == 0) {
                     token = strtok(NULL, DELIM);
-                    currInst->imm = getOffsetVal(symT, symTabLen, token, instCnt) - instCnt;
-                } else {
+                    currInst->rt = atoi(token);
+
+                    currInst->inst[0] = '0';
+                    currInst->inst[2] = hexTable[currInst->rs];
+                    currInst->inst[3] = hexTable[currInst->rt];
+                    currInst->inst[4] = hexTable[currInst->rd];
+                    currInst->inst[5] = '0';
+                    currInst->inst[6] = '0';
+                    currInst->inst[7] = '0';
+                    break;
+
+                case ITYPE:
                     token = strtok(NULL, DELIM);
-                    currInst->imm = getOffsetVal(symT, symTabLen, token, instCnt);
-                }
+                    currInst->rt = atoi(token);
 
-                char *imm = int2hex16(currInst->imm);
+                    if (strcmp(currInst->mnemonic, "lui") == 0) {
+                        currInst->rs = 0;
+                    } else {
+                        token = strtok(NULL, DELIM);
+                        currInst->rs = atoi(token);
+                    }
 
-                currInst->inst[0] = '0';
-                currInst->inst[2] = hexTable[currInst->rs];
-                currInst->inst[3] = hexTable[currInst->rt];
-                currInst->inst[4] = imm[0];
-                currInst->inst[5] = imm[1];
-                currInst->inst[6] = imm[2];
-                currInst->inst[7] = imm[3];
+                    if (strcmp(currInst->mnemonic, "jalr") == 0) {
+                        currInst->imm = 0;
+                    } else if (strcmp(currInst->mnemonic, "beq") == 0) {
+                        token = strtok(NULL, DELIM);
+                        currInst->imm = getOffsetVal(symT, symTabLen, token, instCnt) - instCnt;
+                    } else {
+                        token = strtok(NULL, DELIM);
+                        currInst->imm = getOffsetVal(symT, symTabLen, token, instCnt);
+                    }
 
-                // case 2-3 : J-Type instruction
-            } else if (currInst->instType == JTYPE) {
-                if (strcmp(currInst->mnemonic, "halt") == 0) {
-                    currInst->imm = 0;
-                } else {
-                    token = strtok(NULL, DELIM);
-                    currInst->imm = getOffsetVal(symT, symTabLen, token, instCnt);
-                }
+                    imm = int2hex16(currInst->imm);
 
-                char *imm = int2hex16(currInst->imm);
+                    currInst->inst[0] = '0';
+                    currInst->inst[2] = hexTable[currInst->rs];
+                    currInst->inst[3] = hexTable[currInst->rt];
+                    currInst->inst[4] = imm[0];
+                    currInst->inst[5] = imm[1];
+                    currInst->inst[6] = imm[2];
+                    currInst->inst[7] = imm[3];
+                    break;
 
-                currInst->inst[0] = '0';
-                currInst->inst[2] = '0';
-                currInst->inst[3] = '0';
-                currInst->inst[4] = imm[0];
-                currInst->inst[5] = imm[1];
-                currInst->inst[6] = imm[2];
-                currInst->inst[7] = imm[3];
+                case JTYPE:
+                    if (strcmp(currInst->mnemonic, "halt") == 0) {
+                        currInst->imm = 0;
+                    } else {
+                        token = strtok(NULL, DELIM);
+                        currInst->imm = getOffsetVal(symT, symTabLen, token, instCnt);
+                    }
+
+                    imm = int2hex16(currInst->imm);
+
+                    currInst->inst[0] = '0';
+                    currInst->inst[2] = '0';
+                    currInst->inst[3] = '0';
+                    currInst->inst[4] = imm[0];
+                    currInst->inst[5] = imm[1];
+                    currInst->inst[6] = imm[2];
+                    currInst->inst[7] = imm[3];
             }
             // obtain decimal equivalent of hex instruction
             currInst->intInst = hex2int(currInst->inst);
@@ -285,6 +288,5 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
         // output file
         fprintf(machp, "%d\n", currInst->intInst);
     }
-
     free(line);
 }
