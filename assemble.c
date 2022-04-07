@@ -19,15 +19,6 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-//    if ((assp = fopen("../test/prog1.as", "r")) == NULL) {
-//        printf("%s cannot be opened\n", argv[1]);
-//        exit(1);
-//    }
-//    if ((machp = fopen("../test/prog1.mc", "w+")) == NULL) {
-//        printf("%s cannot be opened\n", argv[2]);
-//        exit(1);
-//    }
-
     int i, symTabLen = findSymTabLen(assp);
     struct symbolTable *pSymTab = (struct symbolTable *) malloc(symTabLen * sizeof(struct symbolTable));
 
@@ -60,7 +51,7 @@ int isLetter(char a) {
 // finds int value of the offset
 // - if offset is decimal, converts to int
 // - if offset is symbol, searches in the symTable
-int getOffsetVal(struct symbolTable *symT, int symTabLen, char *sym, int lineNo) {
+int getOffsetVal(struct symbolTable *symT, int symTabLen, char *sym, int instCnt) {
     int offset, overflow;
     if (strlen(sym) > 6) {
         overflow = 1;
@@ -72,11 +63,11 @@ int getOffsetVal(struct symbolTable *symT, int symTabLen, char *sym, int lineNo)
         for (i = 0; i < symTabLen; ++i)
             if (strcmp(symT[i].symbol, sym) == 0)
                 return symT[i].value;
-        printf("Err1: Using undefined label '%s' on line '%d'\n", sym, lineNo);
+        printf("Err1: Using undefined label '%s'. [address: %d]\n", sym, instCnt - 1);
         exit(1);
     }
     if (overflow) {
-        printf("Err3: Offset overflow for '%s' on line '%d'\n", sym, lineNo);
+        printf("Err3: Offset overflow for '%s'. [address: %d]\n", sym, instCnt - 1);
         exit(1);
     }
     return offset;
@@ -108,7 +99,7 @@ void fillSymTab(struct symbolTable *symT, FILE *inputFile) {
 
             for (j = 0; j < i; ++j)
                 if (strcmp(token, symT[j].symbol) == 0) {
-                    printf("Err2: Duplicate definition of label '%s' in lines '%d' and '%d'\n",
+                    printf("Err2: Duplicate definition of label '%s'. [addresses: %d, %d]\n",
                            token, symT[j].value, lineNo);
                     exit(1);
                 }
@@ -205,7 +196,7 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
             }
 
             if (!found) {
-                printf("Err4: Invalid opcode for mnemonic '%s' in line '%d'\n", currInst->mnemonic, instCnt);
+                printf("Err4: Invalid opcode for mnemonic '%s'. [address: %d]\n", currInst->mnemonic, instCnt - 1);
                 exit(1);
             }
 
