@@ -244,8 +244,13 @@ void as2mc(struct symbolTable *symT, int symTabLen, FILE *assp, FILE *machp) {
                     imm = int2hex16(currInst->imm);
 
                     currInst->inst[0] = '0';
-                    currInst->inst[2] = hexTable[currInst->rs];
-                    currInst->inst[3] = hexTable[currInst->rt];
+                    if (strcmp(currInst->mnemonic, "beq") == 0) {
+                        currInst->inst[2] = hexTable[currInst->rt];
+                        currInst->inst[3] = hexTable[currInst->rs];
+                    } else {
+                        currInst->inst[2] = hexTable[currInst->rs];
+                        currInst->inst[3] = hexTable[currInst->rt];
+                    }
                     currInst->inst[4] = imm[0];
                     currInst->inst[5] = imm[1];
                     currInst->inst[6] = imm[2];
